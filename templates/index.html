@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AmbitionBox City Analytics Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-light">
+    <div class="container py-5">
+        <!-- Header -->
+        <div class="text-center mb-5">
+            <h1 class="fw-bold text-dark">AmbitionBox City Analytics</h1>
+            <p class="text-muted">Workplace ratings, data insights, and company directory</p>
+        </div>
+
+        <!-- City Selector -->
+        <div class="row justify-content-center mb-5">
+            <div class="col-md-6">
+                <form method="GET" action="/" class="input-group shadow-sm">
+                    <select name="city" class="form-select form-select-lg" required>
+                        <option value="">-- Choose a City to Inspect --</option>
+                        {% for c in cities %}
+                            <option value="{{ c }}" {% if selected_city == c %}selected{% endif %}>{{ c }}</option>
+                        {% endfor %}
+                    </select>
+                    <button class="btn btn-primary px-4" type="submit">Explore</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- FIXED CHARTS SECTION (Always Visible: Average Ratings & Counts across all cities) -->
+        <div class="row mb-5">
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-sm border-0 bg-white p-4 h-100">
+                    <h5 class="fw-bold mb-3 text-secondary text-center">Average Rating by City</h5>
+                    <div style="position: relative; height: 300px;">
+                        <canvas id="ratingChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-sm border-0 bg-white p-4 h-100">
+                    <h5 class="fw-bold mb-3 text-secondary text-center">Company Count by City</h5>
+                    <div style="position: relative; height: 300px;">
+                        <canvas id="countChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if selected_city and stats %}
+        <!-- Selected City Summary Cards -->
+        <div class="row text-center mb-4">
+            <div class="col-md-6 mb-3">
+                <div class="card p-4 shadow-sm bg-white border-0">
+                    <span class="text-uppercase small fw-bold text-muted">Total Listed Companies in {{ selected_city.capitalize() }}</span>
+                    <h2 class="fw-bold mt-2 text-dark">{{ stats.total }}</h2>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="card p-4 shadow-sm bg-white border-0">
+                    <span class="text-uppercase small fw-bold text-muted">Average City Rating</span>
+                    <h2 class="fw-bold mt-2 text-success">{{ stats.avg_rating }} ⭐</h2>
+                </div>
+            </div>
+        </div>
+
+        <!-- DYNAMIC CHARTS SECTION (Appears only when a city is searched/selected) -->
+        <div class="row mb-5">
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-sm border-0 bg-white p-4 h-100">
+                    <h5 class="fw-bold mb-3 text-primary text-center">Top 10 Highest Rated Companies in {{ selected_city.capitalize() }}</h5>
+                    <div style="position: relative; height: 300px;">
+                        <canvas id="topCompaniesChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-sm border-0 bg-white p-4 h-100">
+                    <h5 class="fw-bold mb-3 text-primary text-center">Top Industries in {{ selected_city.capitalize() }}</h5>
+                    <div style="position: relative; height: 300px;">
+                        <canvas id="industryChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if selected_city and companies %}
+        <!-- Companies Table at the Bottom -->
+        <div class="card shadow-sm border-0 bg-white overflow-hidden mb-5">
+            <div class="card-header bg-dark text-white py-3">
+                <h5 class="mb-0 fw-bold">Company Directory for {{ selected_city.capitalize() }}</h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Company Name</th>
+                            <th>Rating</th>
+                            <th>Details / Industry Data</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for comp in companies %}
+                        <tr>
+                            <td class="fw-bold text-dark">{{ comp.company_name }}</td>
+                            <td><span class="badge bg-success fs-6">{{ comp.company_rating }} ⭐</span></td>
+                            <td class="text-muted">{{ comp.other_data }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Chart.js Visualizations Script -->
+    <script>
+        // 1. Fixed Global Rating Chart
+        const ratingCtx = document.getElementById('ratingChart').getContext('2d');
+        new Chart(ratingCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ city_labels | tojson }},
+                datasets: [{
+                    label: 'Avg Rating',
+                    data: {{ city_ratings | tojson }},
+                    backgroundColor: 'rgba(13, 110, 253, 0.7)',
+                    borderColor: 'rgba(13, 110, 253, 1)',
+                    borderWidth: 1,
+                    borderRadius: 6
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 3.0, max: 5.0 } } }
+        });
+
+        // 2. Fixed Global Count Chart
+        const countCtx = document.getElementById('countChart').getContext('2d');
+        new Chart(countCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ city_labels | tojson }},
+                datasets: [{
+                    label: 'Total Companies',
+                    data: {{ city_counts | tojson }},
+                    backgroundColor: 'rgba(111, 66, 193, 0.7)',
+                    borderColor: 'rgba(111, 66, 193, 1)',
+                    borderWidth: 1,
+                    borderRadius: 6
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+
+        {% if selected_city and stats %}
+        // 3. Dynamic Top 10 Highest-Rated Companies Chart
+        const topCompCtx = document.getElementById('topCompaniesChart').getContext('2d');
+        new Chart(topCompCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ top_companies_names | tojson }},
+                datasets: [{
+                    label: 'Rating',
+                    data: {{ top_companies_ratings | tojson }},
+                    backgroundColor: 'rgba(25, 135, 84, 0.7)',
+                    borderColor: 'rgba(25, 135, 84, 1)',
+                    borderWidth: 1,
+                    borderRadius: 6
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 3.0, max: 5.0 } } }
+        });
+
+        // 4. Dynamic Industry Breakdown Chart
+        const industryCtx = document.getElementById('industryChart').getContext('2d');
+        new Chart(industryCtx, {
+            type: 'doughnut',
+            data: {
+                labels: {{ industry_labels | tojson }},
+                datasets: [{
+                    data: {{ industry_counts | tojson }},
+                    backgroundColor: [
+                        'rgba(13, 110, 253, 0.7)',
+                        'rgba(111, 66, 193, 0.7)',
+                        'rgba(25, 135, 84, 0.7)',
+                        'rgba(255, 193, 7, 0.7)',
+                        'rgba(220, 53, 69, 0.7)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+        {% endif %}
+    </script>
+</body>
+</html>

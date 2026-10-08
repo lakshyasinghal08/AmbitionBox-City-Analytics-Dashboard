@@ -1,0 +1,96 @@
+body {
+    background-color: #f4f7f6;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #333;
+    font-size: 1.05rem; /* Slightly larger base text */
+}
+
+.container {
+    max-width: 1300px; /* Wider container for a spacious layout */
+    padding-top: 2rem;
+    padding-bottom: 3rem;
+}
+
+h1 {
+    font-size: 2.5rem;
+    color: #1e293b;
+}
+
+h3, h4, h5 {
+    color: #334155;
+    font-weight: 700;
+}
+
+/* Card and Container Styling */
+.card {
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05) !important;
+}
+
+/* Stat Cards & Comparison Cards */
+.stat-card {
+    padding: 1.5rem !important;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 25px rgba(0,0,0,0.1) !important;
+}
+
+/* Search Input Box Enlargement */
+.form-control-lg {
+    font-size: 1.15rem;
+    padding: 1rem 1.25rem;
+}
+
+/* Quick city tag links */
+.quick-links a {
+    color: #0d6efd;
+    background-color: #e2e8f0;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    transition: all 0.2s ease-in-out;
+    display: inline-block;
+    margin: 4px;
+}
+
+.quick-links a:hover {
+    background-color: #0d6efd;
+    color: #fff;
+    text-decoration: none;
+}
+
+/* Table Styling */
+.table-container {
+    border-radius: 16px;
+    overflow: hidden;
+    border: none;
+}
+
+.table th {
+    background-color: #1e293b;
+    color: #fff;
+    font-weight: 600;
+    font-size: 1.05rem;
+    padding: 18px;
+}
+
+.table td {
+    padding: 18px;
+    vertical-align: middle;
+    font-size: 1rem;
+}
+
+/* Custom scrollbars for comparison tables */
+.table-responsive::-webkit-scrollbar {
+    width: 8px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background-color: #94a3b8;
+    border-radius: 4px;
+}
