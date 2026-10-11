@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}City Explorer - AmbitionAnalytics{% endblock %}
+{% block content %}
+<div class="text-center mb-5">
+    <h1 class="fw-bold">Deep-Dive City Explorer</h1>
+    <p class="text-muted">Select any metropolitan hub to inspect granular company ratings and sector shares.</p>
+</div>
+
+<!-- City Selection Bar -->
+<div class="row justify-content-center mb-5">
+    <div class="col-md-7">
+        <form method="GET" action="{{ url_for('explore') }}" class="input-group shadow-sm">
+            <select name="city" class="form-select form-select-lg" required>
+                <option value="">-- Choose a City to Inspect --</option>
+                {% for c in cities %}
+                    <option value="{{ c }}" {% if selected_city == c %}selected{% endif %}>{{ c }}</option>
+                {% endfor %}
+            </select>
+            <button class="btn btn-primary px-5" type="submit">Inspect</button>
+        </form>
+    </div>
+</div>
+
+{% if selected_city and stats %}
+<!-- City Metrics Summary -->
+<div class="row text-center mb-5 g-4">
+    <div class="col-md-4">
+        <div class="card p-4 bg-white">
+            <span class="text-uppercase small fw-bold text-muted">Total Listed Companies</span>
+            <h3 class="fw-bold text-dark mt-2 mb-0">{{ stats.total }}</h3>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card p-4 bg-white">
+            <span class="text-uppercase small fw-bold text-muted">Average Rating</span>
+            <h3 class="fw-bold text-success mt-2 mb-0">{{ stats.avg_rating }} ⭐</h3>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card p-4 bg-white">
+            <span class="text-uppercase small fw-bold text-muted">Rating Range (Min - Max)</span>
+            <h3 class="fw-bold text-primary mt-2 mb-0">{{ stats.min_rating }} - {{ stats.max_rating }} ⭐</h3>
+        </div>
+    </div>
+</div>
+
+<!-- City Visualizations -->
+<div class="row mb-5 g-4">
+    <div class="col-md-6">
+        <div class="card p-4 bg-white h-100">
+            <h5 class="fw-bold text-center mb-4 text-primary">Top 10 Rated in {{ selected_city.capitalize() }}</h5>
+            <div style="height: 320px;"><canvas id="topCompChart"></canvas></div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card p-4 bg-white h-100">
+            <h5 class="fw-bold text-center mb-4 text-primary">Top Industries in {{ selected_city.capitalize() }}</h5>
+            <div style="height: 320px;"><canvas id="industryChart"></canvas></div>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Directory Table -->
+<div class="card bg-white overflow-hidden mb-5">
+    <div class="card-header bg-dark text-white py-3">
+        <h5 class="mb-0 fw-bold">Company Directory: {{ selected_city.capitalize() }}</h5>
+    </div>
+    <div class="table-responsive table-container border-0">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr><th>Company Name</th><th>Rating</th><th>Industry & Other Data</th></tr>
+            </thead>
+            <tbody>
+                {% for comp in companies %}
+                <tr>
+                    <td class="fw-bold text-dark">{{ comp.company_name }}</td>
+                    <td><span class="badge-rating">{{ comp.company_rating }} ⭐</span></td>
+                    <td class="text-muted">{{ comp.other_data }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const topCompCtx = document.getElementById('topCompChart').getContext('2d');
+    new Chart(topCompCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ top_names | tojson }},
+            datasets: [{ label: 'Rating', data: {{ top_ratings | tojson }}, backgroundColor: 'rgba(16, 185, 129, 0.75)', borderRadius: 8 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 3.0, max: 5.0 } } }
+    });
+
+    const indCtx = document.getElementById('industryChart').getContext('2d');
+    new Chart(indCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ ind_labels | tojson }},
+            datasets: [{ data: {{ ind_counts | tojson }}, backgroundColor: ['#4f46e5', '#06b6d4', '#10b981', '#f59e0b', '#ef4444'] }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+</script>
+{% endif %}
+{% endblock %}

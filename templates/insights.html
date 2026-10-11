@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Data Insights - AmbitionAnalytics{% endblock %}
+{% block content %}
+<div class="text-center mb-5">
+    <h1 class="fw-bold">Statistical Data Insights</h1>
+    <p class="text-muted">Underlying statistical parameters generated directly via Pandas describe analysis.</p>
+</div>
+
+<div class="row text-center mb-5">
+    <div class="col-md-12">
+        <div class="card p-4 bg-white">
+            <span class="text-uppercase small fw-bold text-muted">Total Records Analyzed</span>
+            <h2 class="fw-bold text-primary mt-2 mb-0">{{ total_records }} Rows</h2>
+        </div>
+    </div>
+</div>
+
+<div class="card bg-white p-4 shadow-sm mb-5">
+    <h4 class="fw-bold mb-4 text-secondary">📊 Rating Summary Statistics (`df.describe()`)</h4>
+    <div class="table-responsive table-container border-0">
+        {{ desc_html | safe }}
+    </div>
+</div>
+{% endblock %}

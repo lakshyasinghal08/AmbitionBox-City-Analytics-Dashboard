@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Compare Cities - AmbitionAnalytics{% endblock %}
+{% block content %}
+<div class="text-center mb-5">
+    <h1 class="fw-bold">Side-by-Side City Comparison</h1>
+    <p class="text-muted">Compare two metropolitan business hubs head-to-head across key performance metrics.</p>
+</div>
+
+<!-- Comparison Selector Form -->
+<div class="card p-4 bg-white mb-5 shadow-sm">
+    <form method="GET" action="{{ url_for('compare') }}" class="row g-3 align-items-center">
+        <div class="col-md-5">
+            <select name="city1" class="form-select form-select-lg" required>
+                <option value="">-- Select First City --</option>
+                {% for c in cities %}
+                    <option value="{{ c }}" {% if city1 == c %}selected{% endif %}>{{ c }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-5">
+            <select name="city2" class="form-select form-select-lg" required>
+                <option value="">-- Select Second City --</option>
+                {% for c in cities %}
+                    <option value="{{ c }}" {% if city2 == c %}selected{% endif %}>{{ c }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold">Compare</button>
+        </div>
+    </form>
+</div>
+
+{% if data1 and data2 %}
+<div class="row g-4 text-center">
+    <div class="col-md-6">
+        <div class="card p-5 bg-white h-100 border-top border-primary border-4">
+            <h2 class="fw-bold text-primary mb-3">{{ data1.name.capitalize() }}</h2>
+            <hr class="mb-4">
+            <p class="text-muted text-uppercase small fw-bold mb-1">Total Listed Companies</p>
+            <h3 class="fw-bold text-dark mb-4">{{ data1.total }}</h3>
+            <p class="text-muted text-uppercase small fw-bold mb-1">Average Workplace Rating</p>
+            <h3 class="fw-bold text-success mb-4">{{ data1.avg_rating }} ⭐</h3>
+            <p class="text-muted text-uppercase small fw-bold mb-1">Top Rated Employer</p>
+            <h4 class="fw-bold text-secondary">{{ data1.top_company }}</h4>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card p-5 bg-white h-100 border-top border-info border-4">
+            <h2 class="fw-bold text-info mb-3">{{ data2.name.capitalize() }}</h2>
+            <hr class="mb-4">
+            <p class="text-muted text-uppercase small fw-bold mb-1">Total Listed Companies</p>
+            <h3 class="fw-bold text-dark mb-4">{{ data2.total }}</h3>
+            <p class="text-muted text-uppercase small fw-bold mb-1">Average Workplace Rating</p>
+            <h3 class="fw-bold text-success mb-4">{{ data2.avg_rating }} ⭐</h3>
+            <p class="text-muted text-uppercase small fw-bold mb-1">Top Rated Employer</p>
+            <h4 class="fw-bold text-secondary">{{ data2.top_company }}</h4>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

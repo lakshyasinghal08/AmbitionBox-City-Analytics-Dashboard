@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}City Explorer - AmbitionAnalytics{% endblock %}
+{% block content %}
+<div class="text-center mb-4">
+    <h1 class="fw-bold">City Deep-Dive Explorer</h1>
+    <p class="text-muted">Select a city to review top-rated employers and industry distributions.</p>
+</div>
+
+<!-- Selector Form -->
+<div class="row justify-content-center mb-5">
+    <div class="col-md-6">
+        <form method="GET" action="{{ url_for('cities_view') }}" class="input-group shadow-sm">
+            <select name="city" class="form-select form-select-lg" required>
+                <option value="">-- Choose a City --</option>
+                {% for c in cities %}
+                    <option value="{{ c }}" {% if selected_city == c %}selected{% endif %}>{{ c }}</option>
+                {% endfor %}
+            </select>
+            <button class="btn btn-primary px-4" type="submit">Inspect</button>
+        </form>
+    </div>
+</div>
+
+{% if selected_city and stats %}
+<div class="row text-center mb-4 g-4">
+    <div class="col-md-6">
+        <div class="card p-4 bg-white">
+            <span class="text-muted small fw-bold">Listed Companies in {{ selected_city.capitalize() }}</span>
+            <h2 class="fw-bold mt-2">{{ stats.total }}</h2>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card p-4 bg-white">
+            <span class="text-muted small fw-bold">Average Rating</span>
+            <h2 class="fw-bold text-success mt-2">{{ stats.avg_rating }} ⭐</h2>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-5 g-4">
+    <div class="col-md-6">
+        <div class="card bg-white p-4 h-100">
+            <h5 class="fw-bold text-primary text-center mb-3">Top 10 Companies</h5>
+            <div style="height: 320px;"><canvas id="topCompChart"></canvas></div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card bg-white p-4 h-100">
+            <h5 class="fw-bold text-primary text-center mb-3">Top Industries</h5>
+            <div style="height: 320px;"><canvas id="industryChart"></canvas></div>
+        </div>
+    </div>
+</div>
+
+<!-- Company Table -->
+<div class="card bg-white overflow-hidden mb-5">
+    <div class="card-header bg-dark text-white py-3">
+        <h5 class="mb-0 fw-bold">Directory: {{ selected_city.capitalize() }}</h5>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+            <thead class="table-light">
+                <tr><th>Company Name</th><th>Rating</th><th>Industry / Details</th></tr>
+            </thead>
+            <tbody>
+                {% for comp in companies %}
+                <tr>
+                    <td class="fw-bold">{{ comp.company_name }}</td>
+                    <td><span class="badge bg-success">{{ comp.company_rating }} ⭐</span></td>
+                    <td class="text-muted">{{ comp.other_data }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const topCompCtx = document.getElementById('topCompChart').getContext('2d');
+    new Chart(topCompCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ top_names | tojson }},
+            datasets: [{ label: 'Rating', data: {{ top_ratings | tojson }}, backgroundColor: 'rgba(25, 135, 84, 0.7)', borderRadius: 6 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 3.0, max: 5.0 } } }
+    });
+
+    const indCtx = document.getElementById('industryChart').getContext('2d');
+    new Chart(indCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ ind_labels | tojson }},
+            datasets: [{ data: {{ ind_counts | tojson }}, backgroundColor: ['#0d6efd', '#6f42c1', '#198754', '#ffc107', '#dc3545'] }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+</script>
+{% endif %}
+{% endblock %}
