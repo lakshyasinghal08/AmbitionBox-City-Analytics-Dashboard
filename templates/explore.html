@@ -1,108 +1,475 @@
 {% extends "base.html" %}
-{% block title %}City Explorer - AmbitionAnalytics{% endblock %}
+{% block title %}Explore Companies · AmbitionBox Analysis{% endblock %}
+
 {% block content %}
-<div class="text-center mb-5">
-    <h1 class="fw-bold">Deep-Dive City Explorer</h1>
-    <p class="text-muted">Select any metropolitan hub to inspect granular company ratings and sector shares.</p>
-</div>
-
-<!-- City Selection Bar -->
-<div class="row justify-content-center mb-5">
-    <div class="col-md-7">
-        <form method="GET" action="{{ url_for('explore') }}" class="input-group shadow-sm">
-            <select name="city" class="form-select form-select-lg" required>
-                <option value="">-- Choose a City to Inspect --</option>
-                {% for c in cities %}
-                    <option value="{{ c }}" {% if selected_city == c %}selected{% endif %}>{{ c }}</option>
-                {% endfor %}
-            </select>
-            <button class="btn btn-primary px-5" type="submit">Inspect</button>
-        </form>
-    </div>
-</div>
-
-{% if selected_city and stats %}
-<!-- City Metrics Summary -->
-<div class="row text-center mb-5 g-4">
-    <div class="col-md-4">
-        <div class="card p-4 bg-white">
-            <span class="text-uppercase small fw-bold text-muted">Total Listed Companies</span>
-            <h3 class="fw-bold text-dark mt-2 mb-0">{{ stats.total }}</h3>
+<div class="container-fluid px-lg-4 px-3 py-3">
+    <!-- Top Action Banner matching Screenshot 2 & 3 -->
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3 pb-2 border-bottom border-secondary border-opacity-10">
+        <div>
+            <p class="text-secondary small mb-0" style="font-size: 0.92rem;">
+                Filter the dataset and sort through matching companies. Your selection also powers the Dashboard.
+            </p>
+        </div>
+        <div>
+            <a href="{{ url_for('dashboard') }}" id="btnVisualizeSelection" class="btn-action-pill" style="padding: 0.5rem 1.25rem;">
+                <i class="bi bi-pie-chart-fill me-1"></i> Visualize this selection
+            </a>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card p-4 bg-white">
-            <span class="text-uppercase small fw-bold text-muted">Average Rating</span>
-            <h3 class="fw-bold text-success mt-2 mb-0">{{ stats.avg_rating }} ⭐</h3>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card p-4 bg-white">
-            <span class="text-uppercase small fw-bold text-muted">Rating Range (Min - Max)</span>
-            <h3 class="fw-bold text-primary mt-2 mb-0">{{ stats.min_rating }} - {{ stats.max_rating }} ⭐</h3>
-        </div>
+
+    <!-- Main Explore Layout: Sidebar + Table -->
+    <div class="explore-layout">
+        <!-- Filter Sidebar -->
+        <aside class="filter-card" id="exploreFilterSidebar">
+            <div class="filter-header">
+                <h5 class="filter-title">Filters</h5>
+                <button type="button" id="btnResetFilters" class="btn-reset">Reset all</button>
+            </div>
+
+            <!-- Company Name Search -->
+            <div class="filter-group">
+                <label class="filter-label" for="filterName">Company name</label>
+                <input type="text" id="filterName" class="form-control-dark" placeholder="Search a company..." value="{{ request.args.get('search', '') }}">
+            </div>
+
+            <!-- Industry Dropdown -->
+            <div class="filter-group">
+                <label class="filter-label" for="filterIndustry">Industry</label>
+                <select id="filterIndustry" class="form-select-dark">
+                    <option value="">All industries</option>
+                    {% for ind in all_industries %}
+                    <option value="{{ ind }}" {% if request.args.get('industry') == ind %}selected{% endif %}>{{ ind }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Location Dropdown -->
+            <div class="filter-group">
+                <label class="filter-label" for="filterLocation">Location</label>
+                <select id="filterLocation" class="form-select-dark">
+                    <option value="">All locations</option>
+                    {% for loc in all_locations %}
+                    <option value="{{ loc }}" {% if request.args.get('location') == loc %}selected{% endif %}>{{ loc }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Company Size Dropdown -->
+            <div class="filter-group">
+                <label class="filter-label" for="filterSize">Company size</label>
+                <select id="filterSize" class="form-select-dark">
+                    <option value="">All sizes</option>
+                    {% for sz in all_sizes %}
+                    <option value="{{ sz }}" {% if request.args.get('size') == sz %}selected{% endif %}>{{ sz }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Company Type Dropdown -->
+            <div class="filter-group">
+                <label class="filter-label" for="filterType">Type</label>
+                <select id="filterType" class="form-select-dark">
+                    <option value="">All types</option>
+                    {% for tp in all_types %}
+                    <option value="{{ tp }}" {% if request.args.get('type') == tp %}selected{% endif %}>{{ tp }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Rating Range Slider -->
+            <div class="filter-group">
+                <div class="filter-label">
+                    <span>Rating</span>
+                    <span class="filter-value-badge" id="badgeRating">1.0 - 5.0</span>
+                </div>
+                <input type="range" class="range-slider" id="filterRatingMin" min="1.0" max="5.0" step="0.1" value="1.0">
+            </div>
+
+            <!-- Age Range Slider -->
+            <div class="filter-group">
+                <div class="filter-label">
+                    <span>Age (years)</span>
+                    <span class="filter-value-badge" id="badgeAge">0 - 150+</span>
+                </div>
+                <input type="range" class="range-slider" id="filterAgeMax" min="1" max="150" step="1" value="150">
+            </div>
+
+            <!-- Include Unknown Age Checkbox -->
+            <div class="filter-group mb-4">
+                <label class="custom-checkbox-label">
+                    <input type="checkbox" id="filterIncludeUnknownAge" checked>
+                    <span>Include companies with unknown age</span>
+                </label>
+            </div>
+
+            <!-- Export CSV Button -->
+            <button type="button" id="btnExportCsv" class="btn-export-csv">
+                <i class="bi bi-file-earmark-arrow-down"></i> Export CSV
+            </button>
+        </aside>
+
+        <!-- Table Main Section -->
+        <section class="table-card" id="exploreTableSection">
+            <div class="table-toolbar">
+                <div class="match-count">
+                    <span id="matchCountDisplay">64,210</span> companies match
+                </div>
+                <div class="rows-selector">
+                    <span>Rows</span>
+                    <select id="rowsPerPageSelect" class="rows-select">
+                        <option value="10">10</option>
+                        <option value="25" selected>25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Data Table Container -->
+            <div class="data-table-container">
+                <table class="custom-dark-table" id="companiesTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 28%;">COMPANY</th>
+                            <th class="sortable" id="thRating" style="width: 14%;">
+                                RATING <span id="sortRatingIcon">▼</span>
+                            </th>
+                            <th style="width: 20%;">INDUSTRY</th>
+                            <th style="width: 10%;">SIZE</th>
+                            <th style="width: 10%;">TYPE</th>
+                            <th style="width: 8%;">AGE</th>
+                            <th style="width: 10%;">LOCATION</th>
+                        </tr>
+                    </thead>
+                    <tbody id="companiesTableBody">
+                        <!-- Populated by JavaScript -->
+                        <tr>
+                            <td colspan="7" class="text-center py-5">
+                                <div class="spinner-pulse mb-2"></div>
+                                <div class="text-muted small">Loading company intelligence data...</div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination Bar -->
+            <div class="pagination-container" id="paginationBar">
+                <div class="pagination-info" id="paginationInfo">
+                    Showing 0 to 0 of 0 companies
+                </div>
+                <div class="pagination-controls" id="paginationControls">
+                    <!-- Dynamic page buttons -->
+                </div>
+            </div>
+        </section>
     </div>
 </div>
+{% endblock %}
 
-<!-- City Visualizations -->
-<div class="row mb-5 g-4">
-    <div class="col-md-6">
-        <div class="card p-4 bg-white h-100">
-            <h5 class="fw-bold text-center mb-4 text-primary">Top 10 Rated in {{ selected_city.capitalize() }}</h5>
-            <div style="height: 320px;"><canvas id="topCompChart"></canvas></div>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card p-4 bg-white h-100">
-            <h5 class="fw-bold text-center mb-4 text-primary">Top Industries in {{ selected_city.capitalize() }}</h5>
-            <div style="height: 320px;"><canvas id="industryChart"></canvas></div>
-        </div>
-    </div>
-</div>
-
-<!-- Detailed Directory Table -->
-<div class="card bg-white overflow-hidden mb-5">
-    <div class="card-header bg-dark text-white py-3">
-        <h5 class="mb-0 fw-bold">Company Directory: {{ selected_city.capitalize() }}</h5>
-    </div>
-    <div class="table-responsive table-container border-0">
-        <table class="table table-hover mb-0">
-            <thead>
-                <tr><th>Company Name</th><th>Rating</th><th>Industry & Other Data</th></tr>
-            </thead>
-            <tbody>
-                {% for comp in companies %}
-                <tr>
-                    <td class="fw-bold text-dark">{{ comp.company_name }}</td>
-                    <td><span class="badge-rating">{{ comp.company_rating }} ⭐</span></td>
-                    <td class="text-muted">{{ comp.other_data }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
-
+{% block scripts %}
 <script>
-    const topCompCtx = document.getElementById('topCompChart').getContext('2d');
-    new Chart(topCompCtx, {
-        type: 'bar',
-        data: {
-            labels: {{ top_names | tojson }},
-            datasets: [{ label: 'Rating', data: {{ top_ratings | tojson }}, backgroundColor: 'rgba(16, 185, 129, 0.75)', borderRadius: 8 }]
-        },
-        options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 3.0, max: 5.0 } } }
+    // State
+    const state = {
+        search: "{{ request.args.get('search', '') }}",
+        industry: "{{ request.args.get('industry', '') }}",
+        location: "{{ request.args.get('location', '') }}",
+        size: "{{ request.args.get('size', '') }}",
+        type: "{{ request.args.get('type', '') }}",
+        minRating: 1.0,
+        maxAge: 150,
+        includeUnknownAge: true,
+        sortBy: 'company_rating',
+        sortOrder: 'desc',
+        page: 1,
+        limit: 25
+    };
+
+    // DOM Elements
+    const filterName = document.getElementById('filterName');
+    const filterIndustry = document.getElementById('filterIndustry');
+    const filterLocation = document.getElementById('filterLocation');
+    const filterSize = document.getElementById('filterSize');
+    const filterType = document.getElementById('filterType');
+    const filterRatingMin = document.getElementById('filterRatingMin');
+    const filterAgeMax = document.getElementById('filterAgeMax');
+    const filterIncludeUnknownAge = document.getElementById('filterIncludeUnknownAge');
+    const btnResetFilters = document.getElementById('btnResetFilters');
+    const btnExportCsv = document.getElementById('btnExportCsv');
+    const rowsPerPageSelect = document.getElementById('rowsPerPageSelect');
+    const matchCountDisplay = document.getElementById('matchCountDisplay');
+    const tableBody = document.getElementById('companiesTableBody');
+    const paginationInfo = document.getElementById('paginationInfo');
+    const paginationControls = document.getElementById('paginationControls');
+    const badgeRating = document.getElementById('badgeRating');
+    const badgeAge = document.getElementById('badgeAge');
+    const thRating = document.getElementById('thRating');
+    const sortRatingIcon = document.getElementById('sortRatingIcon');
+    const btnVisualizeSelection = document.getElementById('btnVisualizeSelection');
+
+    let fetchDebounceTimer = null;
+
+    function updateVisualizeLink() {
+        const params = new URLSearchParams();
+        if (state.industry) params.set('industry', state.industry);
+        if (state.location) params.set('location', state.location);
+        if (state.search) params.set('search', state.search);
+        btnVisualizeSelection.href = `/dashboard?${params.toString()}`;
+    }
+
+    function fetchCompanies() {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="7" class="text-center py-5">
+                    <div class="spinner-pulse mb-2"></div>
+                    <div class="text-muted small">Loading company intelligence...</div>
+                </td>
+            </tr>
+        `;
+
+        const query = new URLSearchParams({
+            search: state.search,
+            industry: state.industry,
+            location: state.location,
+            size: state.size,
+            type: state.type,
+            min_rating: state.minRating,
+            max_age: state.maxAge,
+            include_unknown_age: state.includeUnknownAge,
+            sort_by: state.sortBy,
+            sort_order: state.sortOrder,
+            page: state.page,
+            limit: state.limit
+        });
+
+        updateVisualizeLink();
+
+        fetch(`/api/companies?${query.toString()}`)
+            .then(res => res.json())
+            .then(data => {
+                matchCountDisplay.innerText = Number(data.total).toLocaleString();
+                renderTable(data.companies);
+                renderPagination(data);
+            })
+            .catch(err => {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-danger">
+                            <i class="bi bi-exclamation-triangle fs-3 d-block mb-2"></i>
+                            Failed to retrieve company records. Please retry.
+                        </td>
+                    </tr>
+                `;
+            });
+    }
+
+    function renderTable(companies) {
+        if (!companies || companies.length === 0) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="text-center py-5">
+                        <div class="text-muted fs-5 mb-2"><i class="bi bi-search"></i> No companies found</div>
+                        <p class="text-secondary small mb-3">Try adjusting or clearing your filters to see matching records.</p>
+                        <button class="btn btn-sm btn-outline-info rounded-pill px-3" onclick="resetFilters()">Reset All Filters</button>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        let html = '';
+        companies.forEach(c => {
+            const indTag = c.industry && c.industry !== '—' 
+                ? `<span class="badge-industry-tag">${c.industry}</span>` 
+                : `<span class="dash-muted">&mdash;</span>`;
+                
+            const typeTag = c.type && c.type !== '—' 
+                ? `<span class="badge-type-tag">${c.type}</span>` 
+                : `<span class="dash-muted">&mdash;</span>`;
+                
+            const sizeText = c.size && c.size !== '—' 
+                ? c.size 
+                : `<span class="dash-muted">&mdash;</span>`;
+                
+            const ageText = c.age !== null && c.age !== undefined && c.age !== '—' 
+                ? `${c.age} yr` 
+                : `<span class="dash-muted">&mdash;</span>`;
+
+            html += `
+                <tr>
+                    <td class="table-company-name">${c.company_name}</td>
+                    <td>
+                        <span class="badge-rating-v2">★ ${Number(c.company_rating).toFixed(1)}</span>
+                    </td>
+                    <td>${indTag}</td>
+                    <td class="text-secondary">${sizeText}</td>
+                    <td>${typeTag}</td>
+                    <td class="text-secondary">${ageText}</td>
+                    <td class="text-secondary">${c.location || '—'}</td>
+                </tr>
+            `;
+        });
+        tableBody.innerHTML = html;
+    }
+
+    function renderPagination(data) {
+        const start = (data.page - 1) * data.limit + 1;
+        const end = Math.min(data.page * data.limit, data.total);
+        paginationInfo.innerText = data.total > 0 
+            ? `Showing ${start.toLocaleString()} to ${end.toLocaleString()} of ${data.total.toLocaleString()} companies`
+            : `Showing 0 companies`;
+
+        let controlsHtml = '';
+        const totalPages = data.total_pages;
+
+        // Previous
+        controlsHtml += `
+            <button class="btn-page" ${data.page <= 1 ? 'disabled' : ''} onclick="changePage(${data.page - 1})">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+        `;
+
+        // Page window
+        let startPage = Math.max(1, data.page - 2);
+        let endPage = Math.min(totalPages, startPage + 4);
+        if (endPage - startPage < 4) {
+            startPage = Math.max(1, endPage - 4);
+        }
+
+        if (startPage > 1) {
+            controlsHtml += `<button class="btn-page" onclick="changePage(1)">1</button>`;
+            if (startPage > 2) controlsHtml += `<span class="text-muted px-1">...</span>`;
+        }
+
+        for (let p = startPage; p <= endPage; p++) {
+            controlsHtml += `
+                <button class="btn-page ${p === data.page ? 'active' : ''}" onclick="changePage(${p})">${p}</button>
+            `;
+        }
+
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) controlsHtml += `<span class="text-muted px-1">...</span>`;
+            controlsHtml += `<button class="btn-page" onclick="changePage(${totalPages})">${totalPages}</button>`;
+        }
+
+        // Next
+        controlsHtml += `
+            <button class="btn-page" ${data.page >= totalPages ? 'disabled' : ''} onclick="changePage(${data.page + 1})">
+                <i class="bi bi-chevron-right"></i>
+            </button>
+        `;
+
+        paginationControls.innerHTML = controlsHtml;
+    }
+
+    function changePage(newPage) {
+        state.page = newPage;
+        fetchCompanies();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function onFilterChange() {
+        clearTimeout(fetchDebounceTimer);
+        fetchDebounceTimer = setTimeout(() => {
+            state.page = 1;
+            state.search = filterName.value.trim();
+            state.industry = filterIndustry.value;
+            state.location = filterLocation.value;
+            state.size = filterSize.value;
+            state.type = filterType.value;
+            state.minRating = parseFloat(filterRatingMin.value);
+            state.maxAge = parseInt(filterAgeMax.value);
+            state.includeUnknownAge = filterIncludeUnknownAge.checked;
+            
+            badgeRating.innerText = `${state.minRating.toFixed(1)} - 5.0`;
+            badgeAge.innerText = state.maxAge >= 150 ? `0 - 150+` : `0 - ${state.maxAge}`;
+
+            fetchCompanies();
+        }, 220);
+    }
+
+    function resetFilters() {
+        filterName.value = '';
+        filterIndustry.value = '';
+        filterLocation.value = '';
+        filterSize.value = '';
+        filterType.value = '';
+        filterRatingMin.value = '1.0';
+        filterAgeMax.value = '150';
+        filterIncludeUnknownAge.checked = true;
+        
+        state.search = '';
+        state.industry = '';
+        state.location = '';
+        state.size = '';
+        state.type = '';
+        state.minRating = 1.0;
+        state.maxAge = 150;
+        state.includeUnknownAge = true;
+        state.sortBy = 'company_rating';
+        state.sortOrder = 'desc';
+        state.page = 1;
+
+        badgeRating.innerText = '1.0 - 5.0';
+        badgeAge.innerText = '0 - 150+';
+        sortRatingIcon.innerText = '▼';
+
+        fetchCompanies();
+    }
+
+    // Event Listeners
+    filterName.addEventListener('input', onFilterChange);
+    filterIndustry.addEventListener('change', onFilterChange);
+    filterLocation.addEventListener('change', onFilterChange);
+    filterSize.addEventListener('change', onFilterChange);
+    filterType.addEventListener('change', onFilterChange);
+    
+    filterRatingMin.addEventListener('input', function() {
+        badgeRating.innerText = `${parseFloat(this.value).toFixed(1)} - 5.0`;
+        onFilterChange();
     });
 
-    const indCtx = document.getElementById('industryChart').getContext('2d');
-    new Chart(indCtx, {
-        type: 'doughnut',
-        data: {
-            labels: {{ ind_labels | tojson }},
-            datasets: [{ data: {{ ind_counts | tojson }}, backgroundColor: ['#4f46e5', '#06b6d4', '#10b981', '#f59e0b', '#ef4444'] }]
-        },
-        options: { responsive: true, maintainAspectRatio: false }
+    filterAgeMax.addEventListener('input', function() {
+        badgeAge.innerText = parseInt(this.value) >= 150 ? '0 - 150+' : `0 - ${this.value}`;
+        onFilterChange();
     });
+
+    filterIncludeUnknownAge.addEventListener('change', onFilterChange);
+
+    btnResetFilters.addEventListener('click', resetFilters);
+
+    rowsPerPageSelect.addEventListener('change', function() {
+        state.limit = parseInt(this.value);
+        state.page = 1;
+        fetchCompanies();
+    });
+
+    thRating.addEventListener('click', function() {
+        if (state.sortBy === 'company_rating') {
+            state.sortOrder = state.sortOrder === 'desc' ? 'asc' : 'desc';
+        } else {
+            state.sortBy = 'company_rating';
+            state.sortOrder = 'desc';
+        }
+        sortRatingIcon.innerText = state.sortOrder === 'desc' ? '▼' : '▲';
+        fetchCompanies();
+    });
+
+    btnExportCsv.addEventListener('click', function() {
+        const query = new URLSearchParams({
+            search: state.search,
+            industry: state.industry,
+            location: state.location,
+            size: state.size,
+            type: state.type,
+            min_rating: state.minRating,
+            max_age: state.maxAge,
+            include_unknown_age: state.includeUnknownAge
+        });
+        window.location.href = `/api/export-csv?${query.toString()}`;
+    });
+
+    // Initial Load
+    fetchCompanies();
 </script>
-{% endif %}
 {% endblock %}

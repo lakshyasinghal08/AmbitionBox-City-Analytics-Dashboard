@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+{% block title %}About & Pipeline · AmbitionBox Analysis{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header matching Screenshot 4 -->
+    <div class="text-center max-w-750 mx-auto mb-5 pt-3">
+        <div class="pill-badge pill-badge-pipeline">
+            <i class="bi bi-diagram-3-fill"></i> THE PIPELINE
+        </div>
+        <h1 class="hero-title mb-3" style="font-size: 2.8rem;">
+            A full data science <span class="text-gradient">lifecycle</span>
+        </h1>
+        <p class="hero-subtitle mb-0">
+            Four stages took this project from a public website to the insights you can explore right here.
+        </p>
+    </div>
+
+    <!-- 4 Pipeline Stage Cards matching Screenshot 4 -->
+    <div class="pipeline-grid mb-5">
+        <!-- STEP 01 -->
+        <div class="pipeline-card" id="step01Card">
+            <div>
+                <div class="pipeline-step">STEP 01</div>
+                <div class="pipeline-icon">
+                    <i class="bi bi-globe2"></i>
+                </div>
+                <h4 class="pipeline-title">Data collection</h4>
+                <p class="pipeline-desc">
+                    Company profiles were <strong>web-scraped</strong> from AmbitionBox across 10 major Indian hiring hubs &mdash; Mumbai, Bangalore, Pune, Hyderabad, Chennai, Ahmedabad, Noida, Jaipur, Gurugram and Indore.
+                </p>
+            </div>
+            <div class="pipeline-stat">
+                <i class="bi bi-database me-1"></i> 94,580 raw listings
+            </div>
+        </div>
+
+        <!-- STEP 02 -->
+        <div class="pipeline-card" id="step02Card">
+            <div>
+                <div class="pipeline-step">STEP 02</div>
+                <div class="pipeline-icon">
+                    <i class="bi bi-funnel"></i>
+                </div>
+                <h4 class="pipeline-title">Data preprocessing</h4>
+                <p class="pipeline-desc">
+                    The ten city files were merged, <strong>30,370 exact duplicates removed</strong>, and the tangled &ldquo;other details&rdquo; text parsed into clean columns &mdash; industry, size, type, age and location &mdash; with numeric ages extracted and missing values handled.
+                </p>
+            </div>
+            <div class="pipeline-stat">
+                <i class="bi bi-check-circle me-1"></i> 64,210 tidy records
+            </div>
+        </div>
+
+        <!-- STEP 03 -->
+        <div class="pipeline-card" id="step03Card">
+            <div>
+                <div class="pipeline-step">STEP 03</div>
+                <div class="pipeline-icon">
+                    <i class="bi bi-search"></i>
+                </div>
+                <h4 class="pipeline-title">Data analysis</h4>
+                <p class="pipeline-desc">
+                    Ratings, ages, sizes and ownership types were profiled across <strong>84 industries</strong> and <strong>371 locations</strong> to surface distributions, averages and the factors that actually drive company ratings.
+                </p>
+            </div>
+            <div class="pipeline-stat">
+                <i class="bi bi-geo-alt me-1"></i> 84 industries &bull; 371 cities
+            </div>
+        </div>
+
+        <!-- STEP 04 -->
+        <div class="pipeline-card" id="step04Card">
+            <div>
+                <div class="pipeline-step">STEP 04</div>
+                <div class="pipeline-icon">
+                    <i class="bi bi-bar-chart-line"></i>
+                </div>
+                <h4 class="pipeline-title">Data visualization</h4>
+                <p class="pipeline-desc">
+                    It all comes together in this application &mdash; a fast, filterable explore view and a comprehensive insights dashboard where every filter interaction instantly re-renders the analytics.
+                </p>
+            </div>
+            <div class="pipeline-stat">
+                <i class="bi bi-pie-chart me-1"></i> 12 interactive views
+            </div>
+        </div>
+    </div>
+
+    <!-- Technical Architecture & Schema Deep-Dive -->
+    <div class="row g-4 mt-2">
+        <div class="col-lg-6">
+            <div class="glass-panel p-4 h-100">
+                <h5 class="fw-bold text-white mb-3 d-flex align-items-center gap-2">
+                    <i class="bi bi-code-slash text-info"></i> Technology Stack
+                </h5>
+                <ul class="list-unstyled d-flex flex-column gap-3 text-secondary small mb-0">
+                    <li class="d-flex align-items-start gap-3">
+                        <span class="badge-type-tag mt-1">Backend</span>
+                        <div>
+                            <strong class="text-white">Python 3 &bull; Flask</strong>
+                            <p class="mb-0 text-muted">Lightweight web server, in-memory Pandas caching, and high-speed JSON REST APIs for sub-10ms filter responses.</p>
+                        </div>
+                    </li>
+                    <li class="d-flex align-items-start gap-3">
+                        <span class="badge-type-tag mt-1">Data Engine</span>
+                        <div>
+                            <strong class="text-white">Pandas &bull; NumPy &bull; RegEx</strong>
+                            <p class="mb-0 text-muted">Deduplication algorithm, string parsing of unstructured listing tokens, and multi-dimensional aggregation.</p>
+                        </div>
+                    </li>
+                    <li class="d-flex align-items-start gap-3">
+                        <span class="badge-type-tag mt-1">Frontend</span>
+                        <div>
+                            <strong class="text-white">Vanilla JavaScript &bull; Bootstrap 5 &bull; Custom CSS</strong>
+                            <p class="mb-0 text-muted">Dark glassmorphism design system, responsive grid, dynamic multi-select filters, and client-side sorting.</p>
+                        </div>
+                    </li>
+                    <li class="d-flex align-items-start gap-3">
+                        <span class="badge-type-tag mt-1">Charts</span>
+                        <div>
+                            <strong class="text-white">Chart.js 4.4</strong>
+                            <p class="mb-0 text-muted">Dynamic responsive canvas graphics rendered with dark-theme color tokens and hover tooltips.</p>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="glass-panel p-4 h-100">
+                <h5 class="fw-bold text-white mb-3 d-flex align-items-center gap-2">
+                    <i class="bi bi-table text-primary-light"></i> Clean Data Schema
+                </h5>
+                <div class="table-responsive">
+                    <table class="table table-sm table-borderless text-secondary small mb-0">
+                        <thead>
+                            <tr class="border-bottom border-secondary border-opacity-25 text-white">
+                                <th>Field</th>
+                                <th>Type</th>
+                                <th>Sample Value</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="text-info fw-semibold">company_name</td>
+                                <td>String</td>
+                                <td>Taletel</td>
+                                <td>Clean corporate name</td>
+                            </tr>
+                            <tr>
+                                <td class="text-info fw-semibold">company_rating</td>
+                                <td>Float</td>
+                                <td>5.0</td>
+                                <td>Workplace rating (1.0 - 5.0)</td>
+                            </tr>
+                            <tr>
+                                <td class="text-info fw-semibold">industry</td>
+                                <td>String</td>
+                                <td>Marketing & Advertising</td>
+                                <td>Parsed vertical (84 categories)</td>
+                            </tr>
+                            <tr>
+                                <td class="text-info fw-semibold">size</td>
+                                <td>String</td>
+                                <td>11-50</td>
+                                <td>Staff employee bracket</td>
+                            </tr>
+                            <tr>
+                                <td class="text-info fw-semibold">type</td>
+                                <td>String</td>
+                                <td>Startup</td>
+                                <td>Public, Private, Startup, etc.</td>
+                            </tr>
+                            <tr>
+                                <td class="text-info fw-semibold">age</td>
+                                <td>Integer</td>
+                                <td>6</td>
+                                <td>Years operating in market</td>
+                            </tr>
+                            <tr>
+                                <td class="text-info fw-semibold">location</td>
+                                <td>String</td>
+                                <td>Ahmedabad</td>
+                                <td>Primary hub / city location</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

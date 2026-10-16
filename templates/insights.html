@@ -1,24 +1,136 @@
 {% extends "base.html" %}
-{% block title %}Data Insights - AmbitionAnalytics{% endblock %}
+{% block title %}Data Insights - AmbitionBox City Analytics{% endblock %}
+
 {% block content %}
-<div class="text-center mb-5">
-    <h1 class="fw-bold">Statistical Data Insights</h1>
-    <p class="text-muted">Underlying statistical parameters generated directly via Pandas describe analysis.</p>
+<div class="mb-4 text-center">
+    <h2 class="fw-bold">Statistical Data Insights</h2>
+    <p class="text-muted">Exploratory data analysis and distribution statistics generated from {{ total_records }} corporate records.</p>
 </div>
 
-<div class="row text-center mb-5">
-    <div class="col-md-12">
-        <div class="card p-4 bg-white">
-            <span class="text-uppercase small fw-bold text-muted">Total Records Analyzed</span>
-            <h2 class="fw-bold text-primary mt-2 mb-0">{{ total_records }} Rows</h2>
+<!-- Stats Metric Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3">
+        <div class="card-custom stat-card">
+            <div class="stat-card-title">Total Rows</div>
+            <div class="stat-card-value text-primary">{{ total_records }}</div>
+            <small class="text-muted"><i class="bi bi-database"></i> Verified Rows</small>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card-custom stat-card">
+            <div class="stat-card-title">Mean Rating</div>
+            <div class="stat-card-value text-success">{{ stats.mean }} ⭐</div>
+            <small class="text-muted"><i class="bi bi-calculator"></i> Average Score</small>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card-custom stat-card">
+            <div class="stat-card-title">Standard Deviation</div>
+            <div class="stat-card-value text-info">{{ stats.std }}</div>
+            <small class="text-muted"><i class="bi bi-graph-up"></i> Rating Spread</small>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card-custom stat-card">
+            <div class="stat-card-title">Median Rating</div>
+            <div class="stat-card-value text-dark">{{ stats.median }} ⭐</div>
+            <small class="text-muted"><i class="bi bi-bar-chart"></i> 50th Percentile</small>
         </div>
     </div>
 </div>
 
-<div class="card bg-white p-4 shadow-sm mb-5">
-    <h4 class="fw-bold mb-4 text-secondary">📊 Rating Summary Statistics (`df.describe()`)</h4>
-    <div class="table-responsive table-container border-0">
-        {{ desc_html | safe }}
+<!-- Charts Grid -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="card-custom p-4 h-100">
+            <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-bar-chart-fill text-primary me-2"></i>Overall Rating Distribution</h5>
+            <div style="height: 280px;">
+                <canvas id="ratingDistChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card-custom p-4 h-100">
+            <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-pie-chart-fill text-info me-2"></i>Top 5 Industries Nationally</h5>
+            <div style="height: 280px;">
+                <canvas id="topIndustriesChart"></canvas>
+            </div>
+        </div>
     </div>
 </div>
+
+<!-- Pandas Describe Table -->
+<div class="card-custom mb-4">
+    <div class="p-3 border-bottom bg-white">
+        <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-table text-primary me-2"></i>Summary Statistics Table (Pandas `df.describe()`)</h5>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-custom table-bordered align-middle text-center mb-0">
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>Mean</th>
+                    <th>Standard Deviation</th>
+                    <th>Min</th>
+                    <th>Median (50%)</th>
+                    <th>Max</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="fw-bold text-dark">Company Rating</td>
+                    <td><span class="badge bg-success-subtle text-success fs-6">{{ stats.mean }} ⭐</span></td>
+                    <td>{{ stats.std }}</td>
+                    <td>{{ stats.min }} ⭐</td>
+                    <td>{{ stats.median }} ⭐</td>
+                    <td>{{ stats.max }} ⭐</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // Rating distribution bar chart
+    const rCtx = document.getElementById('ratingDistChart').getContext('2d');
+    new Chart(rCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ r_labels | tojson }},
+            datasets: [{
+                label: 'Companies',
+                data: {{ r_bins | tojson }},
+                backgroundColor: ['#ef4444', '#f59e0b', '#06b6d4', '#4f46e5', '#10b981'],
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+
+    // Top industries doughnut chart
+    const indCtx = document.getElementById('topIndustriesChart').getContext('2d');
+    new Chart(indCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ ind_labels | tojson }},
+            datasets: [{
+                data: {{ ind_counts | tojson }},
+                backgroundColor: ['#4f46e5', '#06b6d4', '#10b981', '#f59e0b', '#ec4899']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'right' }
+            }
+        }
+    });
+</script>
 {% endblock %}

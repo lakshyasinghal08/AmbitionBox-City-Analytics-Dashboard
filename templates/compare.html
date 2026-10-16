@@ -1,62 +1,116 @@
 {% extends "base.html" %}
-{% block title %}Compare Cities - AmbitionAnalytics{% endblock %}
+{% block title %}Compare Cities · AmbitionBox Analysis{% endblock %}
+
 {% block content %}
-<div class="text-center mb-5">
-    <h1 class="fw-bold">Side-by-Side City Comparison</h1>
-    <p class="text-muted">Compare two metropolitan business hubs head-to-head across key performance metrics.</p>
-</div>
+<div class="container py-4">
+    <div class="mb-4 text-center">
+        <div class="pill-badge">
+            <i class="bi bi-arrow-left-right"></i> BENCHMARK ANALYSIS
+        </div>
+        <h2 class="hero-title mb-2" style="font-size: 2.2rem;">Side-by-Side City Comparison</h2>
+        <p class="hero-subtitle mb-0">Compare two metropolitan business hubs head-to-head across ratings, sectors, and top employers.</p>
+    </div>
 
-<!-- Comparison Selector Form -->
-<div class="card p-4 bg-white mb-5 shadow-sm">
-    <form method="GET" action="{{ url_for('compare') }}" class="row g-3 align-items-center">
-        <div class="col-md-5">
-            <select name="city1" class="form-select form-select-lg" required>
-                <option value="">-- Select First City --</option>
-                {% for c in cities %}
-                    <option value="{{ c }}" {% if city1 == c %}selected{% endif %}>{{ c }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-md-5">
-            <select name="city2" class="form-select form-select-lg" required>
-                <option value="">-- Select Second City --</option>
-                {% for c in cities %}
-                    <option value="{{ c }}" {% if city2 == c %}selected{% endif %}>{{ c }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-md-2">
-            <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold">Compare</button>
-        </div>
-    </form>
-</div>
+    <!-- Comparison Form -->
+    <div class="glass-panel p-4 mb-4">
+        <form method="GET" action="{{ url_for('compare') }}" class="row g-3 align-items-center justify-content-center">
+            <div class="col-md-5">
+                <label class="form-label text-secondary small fw-bold mb-1">Select First City:</label>
+                <select name="city1" class="form-select-dark" required>
+                    {% for c in cities %}
+                        <option value="{{ c }}" {% if city1 and city1.lower() == c.lower() %}selected{% endif %}>{{ c }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-5">
+                <label class="form-label text-secondary small fw-bold mb-1">Select Second City:</label>
+                <select name="city2" class="form-select-dark" required>
+                    {% for c in cities %}
+                        <option value="{{ c }}" {% if city2 and city2.lower() == c.lower() %}selected{% endif %}>{{ c }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 pt-md-4">
+                <button type="submit" class="btn-primary-pill w-100 justify-content-center" style="padding: 0.6rem 1rem;">
+                    <i class="bi bi-arrow-left-right me-1"></i> Compare
+                </button>
+            </div>
+        </form>
+    </div>
 
-{% if data1 and data2 %}
-<div class="row g-4 text-center">
-    <div class="col-md-6">
-        <div class="card p-5 bg-white h-100 border-top border-primary border-4">
-            <h2 class="fw-bold text-primary mb-3">{{ data1.name.capitalize() }}</h2>
-            <hr class="mb-4">
-            <p class="text-muted text-uppercase small fw-bold mb-1">Total Listed Companies</p>
-            <h3 class="fw-bold text-dark mb-4">{{ data1.total }}</h3>
-            <p class="text-muted text-uppercase small fw-bold mb-1">Average Workplace Rating</p>
-            <h3 class="fw-bold text-success mb-4">{{ data1.avg_rating }} ⭐</h3>
-            <p class="text-muted text-uppercase small fw-bold mb-1">Top Rated Employer</p>
-            <h4 class="fw-bold text-secondary">{{ data1.top_company }}</h4>
+    {% if data1 and data2 %}
+    <!-- Side by Side Cards -->
+    <div class="row g-4 mb-4">
+        <!-- City 1 -->
+        <div class="col-md-6">
+            <div class="glass-panel p-4 h-100" style="border-top: 3px solid #38bdf8;">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3 class="fw-bold text-white mb-0">{{ data1.name }}</h3>
+                    <span class="badge-rating-v2">★ {{ data1.avg_rating }}</span>
+                </div>
+                
+                <ul class="list-group list-group-flush mb-4">
+                    <li class="list-group-item d-flex justify-content-between px-0 py-2 bg-transparent text-secondary border-secondary border-opacity-10">
+                        <span><i class="bi bi-buildings me-2 text-info"></i>Total Listed Companies</span>
+                        <strong class="text-white">{{ data1.total }}</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0 py-2 bg-transparent text-secondary border-secondary border-opacity-10">
+                        <span><i class="bi bi-pie-chart me-2 text-info"></i>Dominant Sector</span>
+                        <strong class="text-white">{{ data1.top_industry }}</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0 py-2 bg-transparent text-secondary border-secondary border-opacity-10">
+                        <span><i class="bi bi-trophy me-2 text-warning"></i>Top Rated Employer</span>
+                        <strong class="text-white">{{ data1.top_company }} (★ {{ data1.top_company_rating }})</strong>
+                    </li>
+                </ul>
+
+                <h6 class="fw-bold text-white mb-2">Top 5 Employers in {{ data1.name }}:</h6>
+                <div class="d-flex flex-column gap-1">
+                    {% for comp in data1.top_5 %}
+                    <div class="d-flex justify-content-between align-items-center py-2 px-3 rounded small" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);">
+                        <span class="text-white fw-semibold">{{ comp.company_name }}</span>
+                        <span class="badge-rating-v2">★ {{ comp.company_rating }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- City 2 -->
+        <div class="col-md-6">
+            <div class="glass-panel p-4 h-100" style="border-top: 3px solid #c084fc;">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3 class="fw-bold text-white mb-0">{{ data2.name }}</h3>
+                    <span class="badge-rating-v2">★ {{ data2.avg_rating }}</span>
+                </div>
+                
+                <ul class="list-group list-group-flush mb-4">
+                    <li class="list-group-item d-flex justify-content-between px-0 py-2 bg-transparent text-secondary border-secondary border-opacity-10">
+                        <span><i class="bi bi-buildings me-2 text-purple" style="color: #c084fc;"></i>Total Listed Companies</span>
+                        <strong class="text-white">{{ data2.total }}</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0 py-2 bg-transparent text-secondary border-secondary border-opacity-10">
+                        <span><i class="bi bi-pie-chart me-2 text-purple" style="color: #c084fc;"></i>Dominant Sector</span>
+                        <strong class="text-white">{{ data2.top_industry }}</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0 py-2 bg-transparent text-secondary border-secondary border-opacity-10">
+                        <span><i class="bi bi-trophy me-2 text-warning"></i>Top Rated Employer</span>
+                        <strong class="text-white">{{ data2.top_company }} (★ {{ data2.top_company_rating }})</strong>
+                    </li>
+                </ul>
+
+                <h6 class="fw-bold text-white mb-2">Top 5 Employers in {{ data2.name }}:</h6>
+                <div class="d-flex flex-column gap-1">
+                    {% for comp in data2.top_5 %}
+                    <div class="d-flex justify-content-between align-items-center py-2 px-3 rounded small" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);">
+                        <span class="text-white fw-semibold">{{ comp.company_name }}</span>
+                        <span class="badge-rating-v2">★ {{ comp.company_rating }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
         </div>
     </div>
-    <div class="col-md-6">
-        <div class="card p-5 bg-white h-100 border-top border-info border-4">
-            <h2 class="fw-bold text-info mb-3">{{ data2.name.capitalize() }}</h2>
-            <hr class="mb-4">
-            <p class="text-muted text-uppercase small fw-bold mb-1">Total Listed Companies</p>
-            <h3 class="fw-bold text-dark mb-4">{{ data2.total }}</h3>
-            <p class="text-muted text-uppercase small fw-bold mb-1">Average Workplace Rating</p>
-            <h3 class="fw-bold text-success mb-4">{{ data2.avg_rating }} ⭐</h3>
-            <p class="text-muted text-uppercase small fw-bold mb-1">Top Rated Employer</p>
-            <h4 class="fw-bold text-secondary">{{ data2.top_company }}</h4>
-        </div>
-    </div>
+    {% endif %}
 </div>
-{% endif %}
 {% endblock %}

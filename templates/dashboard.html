@@ -1,0 +1,401 @@
+{% extends "base.html" %}
+{% block title %}Analytics Dashboard · AmbitionBox Analysis{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-lg-4 px-3 py-3">
+    <!-- Header & Interactive Filter Bar -->
+    <div class="glass-panel p-3 mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div>
+            <h4 class="fw-bold text-white mb-0 d-flex align-items-center gap-2">
+                <i class="bi bi-speedometer2 text-info"></i> Corporate Intelligence Dashboard
+            </h4>
+            <p class="text-secondary small mb-0">Multi-dimensional analysis across 64,210 companies</p>
+        </div>
+
+        <div class="d-flex align-items-center flex-wrap gap-2">
+            <select id="dashFilterIndustry" class="form-select-dark" style="width: auto; min-width: 170px;">
+                <option value="">All Industries</option>
+                {% for ind in all_industries %}
+                <option value="{{ ind }}" {% if selected_industry == ind %}selected{% endif %}>{{ ind }}</option>
+                {% endfor %}
+            </select>
+
+            <select id="dashFilterLocation" class="form-select-dark" style="width: auto; min-width: 150px;">
+                <option value="">All Locations</option>
+                {% for loc in all_locations %}
+                <option value="{{ loc }}" {% if selected_location == loc %}selected{% endif %}>{{ loc }}</option>
+                {% endfor %}
+            </select>
+
+            <button id="dashBtnReset" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+                <i class="bi bi-arrow-counterclockwise"></i> Reset
+            </button>
+
+            <a href="{{ url_for('explore') }}" class="btn-action-pill">
+                <i class="bi bi-table"></i> Explore Table &rarr;
+            </a>
+        </div>
+    </div>
+
+    <!-- 4 Filter-Aware KPI Stat Cards -->
+    <div class="stats-grid mb-4">
+        <div class="stat-card-v2">
+            <div class="stat-number" id="dashTotalCompanies">{{ stats.total_formatted }}</div>
+            <div class="stat-label">Companies Analyzed</div>
+        </div>
+
+        <div class="stat-card-v2">
+            <div class="stat-number" id="dashAvgRating" style="color: #34d399;">{{ stats.avg_rating }} ★</div>
+            <div class="stat-label">Mean Workplace Rating</div>
+        </div>
+
+        <div class="stat-card-v2">
+            <div class="stat-number" id="dashTopIndustry" style="font-size: 1.5rem; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">{{ stats.top_industry }}</div>
+            <div class="stat-label">Leading Sector</div>
+        </div>
+
+        <div class="stat-card-v2">
+            <div class="stat-number" id="dashHighestRatedCity" style="font-size: 1.5rem;">{{ stats.top_city }}</div>
+            <div class="stat-label">Top Rated Metro ({{ stats.top_city_rating }} ★)</div>
+        </div>
+    </div>
+
+    <!-- Charts Row 1: Rating Distribution & Top Industries -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-6">
+            <div class="glass-panel p-4 h-100">
+                <h5 class="fw-bold text-white mb-1"><i class="bi bi-bar-chart-fill text-info me-2"></i>Workplace Rating Distribution</h5>
+                <p class="text-secondary small mb-3">Employee rating breakdown across 5 satisfaction bands</p>
+                <div style="height: 300px;">
+                    <canvas id="chartRatingDist"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="glass-panel p-4 h-100">
+                <h5 class="fw-bold text-white mb-1"><i class="bi bi-trophy-fill text-warning me-2"></i>Top 10 Industry Verticals</h5>
+                <p class="text-secondary small mb-3">Sectors with the largest number of registered firms</p>
+                <div style="height: 300px;">
+                    <canvas id="chartTopIndustries"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 2: Metro Cities & Company Sizes -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-7">
+            <div class="glass-panel p-4 h-100">
+                <h5 class="fw-bold text-white mb-1"><i class="bi bi-buildings text-primary-light me-2"></i>Average Rating by Major City</h5>
+                <p class="text-secondary small mb-3">Workplace satisfaction index across key tech & business hubs</p>
+                <div style="height: 300px;">
+                    <canvas id="chartCityRatings"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="glass-panel p-4 h-100">
+                <h5 class="fw-bold text-white mb-1"><i class="bi bi-people-fill text-purple me-2"></i>Company Size Distribution</h5>
+                <p class="text-secondary small mb-3">Workforce scale across listed enterprises</p>
+                <div style="height: 300px;">
+                    <canvas id="chartSizeDist"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 3: Corporate Ownership & Age vs Rating -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-5">
+            <div class="glass-panel p-4 h-100">
+                <h5 class="fw-bold text-white mb-1"><i class="bi bi-pie-chart-fill text-success me-2"></i>Corporate Entity Types</h5>
+                <p class="text-secondary small mb-3">Public vs Startups vs Fortune 500 conglomerates</p>
+                <div style="height: 290px;">
+                    <canvas id="chartTypeDist"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <div class="glass-panel p-4 h-100">
+                <h5 class="fw-bold text-white mb-1"><i class="bi bi-graph-up-arrow text-info me-2"></i>Company Maturity vs Rating</h5>
+                <p class="text-secondary small mb-3">Average rating grouped by years operating in India</p>
+                <div style="height: 290px;">
+                    <canvas id="chartAgeVsRating"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- City Head-to-Head Comparator Section -->
+    <div class="glass-panel p-4 mb-4">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3 pb-2 border-bottom border-secondary border-opacity-10">
+            <div>
+                <h5 class="fw-bold text-white mb-1"><i class="bi bi-arrow-left-right text-info me-2"></i>City Head-to-Head Matchup</h5>
+                <p class="text-secondary small mb-0">Compare corporate workplace indicators between any two hiring hubs</p>
+            </div>
+        </div>
+
+        <div class="row g-3 align-items-center mb-4">
+            <div class="col-md-5">
+                <label class="form-label text-secondary small fw-bold">Primary City</label>
+                <select id="compareCity1" class="form-select-dark">
+                    {% for c in major_cities %}
+                    <option value="{{ c }}" {% if c == 'Bangalore' %}selected{% endif %}>{{ c }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 text-center pt-md-4">
+                <span class="badge rounded-pill text-bg-secondary px-3 py-2">VS</span>
+            </div>
+            <div class="col-md-5">
+                <label class="form-label text-secondary small fw-bold">Comparison City</label>
+                <select id="compareCity2" class="form-select-dark">
+                    {% for c in major_cities %}
+                    <option value="{{ c }}" {% if c == 'Hyderabad' %}selected{% endif %}>{{ c }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="row g-4" id="compareResultsRow">
+            <!-- Dynamically populated comparison cards -->
+            <div class="col-md-6">
+                <div class="p-3 rounded-3" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(56, 189, 248, 0.2);">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="fw-bold text-info mb-0" id="c1Name">Bangalore</h6>
+                        <span class="badge-rating-v2" id="c1Rating">★ 3.92</span>
+                    </div>
+                    <div class="small text-secondary mb-1">Total Companies: <strong class="text-white" id="c1Count">8,560</strong></div>
+                    <div class="small text-secondary mb-1">Top Sector: <strong class="text-white" id="c1TopInd">IT Services & Consulting</strong></div>
+                    <div class="small text-secondary">Top Rated Employer: <strong class="text-white" id="c1TopComp">Amazon</strong></div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="p-3 rounded-3" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(139, 92, 246, 0.2);">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="fw-bold text-purple mb-0" id="c2Name" style="color: #c084fc;">Hyderabad</h6>
+                        <span class="badge-rating-v2" id="c2Rating">★ 3.91</span>
+                    </div>
+                    <div class="small text-secondary mb-1">Total Companies: <strong class="text-white" id="c2Count">10,000</strong></div>
+                    <div class="small text-secondary mb-1">Top Sector: <strong class="text-white" id="c2TopInd">IT Services & Consulting</strong></div>
+                    <div class="small text-secondary">Top Rated Employer: <strong class="text-white" id="c2TopComp">Lavender Technology</strong></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    Chart.defaults.color = '#94a3b8';
+    Chart.defaults.font.family = "'Plus Jakarta Sans', system-ui, sans-serif";
+
+    // 1. Rating Distribution Chart
+    const rCtx = document.getElementById('chartRatingDist').getContext('2d');
+    new Chart(rCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ chart_rating_labels | tojson }},
+            datasets: [{
+                label: 'Companies',
+                data: {{ chart_rating_counts | tojson }},
+                backgroundColor: [
+                    'rgba(239, 68, 68, 0.75)',
+                    'rgba(245, 158, 11, 0.75)',
+                    'rgba(59, 130, 246, 0.75)',
+                    'rgba(16, 185, 129, 0.75)',
+                    'rgba(6, 182, 212, 0.75)'
+                ],
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { grid: { color: 'rgba(255, 255, 255, 0.05)' } },
+                x: { grid: { display: false } }
+            },
+            plugins: { legend: { display: false } }
+        }
+    });
+
+    // 2. Top Industries Chart
+    const indCtx = document.getElementById('chartTopIndustries').getContext('2d');
+    new Chart(indCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ chart_ind_labels | tojson }},
+            datasets: [{
+                label: 'Firms',
+                data: {{ chart_ind_counts | tojson }},
+                backgroundColor: 'rgba(56, 189, 248, 0.75)',
+                borderRadius: 6
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: { grid: { color: 'rgba(255, 255, 255, 0.05)' } },
+                y: { grid: { display: false } }
+            },
+            plugins: { legend: { display: false } }
+        }
+    });
+
+    // 3. City Ratings Chart
+    const cityCtx = document.getElementById('chartCityRatings').getContext('2d');
+    new Chart(cityCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ chart_city_labels | tojson }},
+            datasets: [{
+                label: 'Avg Rating',
+                data: {{ chart_city_ratings | tojson }},
+                backgroundColor: 'rgba(129, 140, 248, 0.75)',
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { min: 3.5, max: 4.1, grid: { color: 'rgba(255, 255, 255, 0.05)' } },
+                x: { grid: { display: false } }
+            },
+            plugins: { legend: { display: false } }
+        }
+    });
+
+    // 4. Size Distribution Chart
+    const sizeCtx = document.getElementById('chartSizeDist').getContext('2d');
+    new Chart(sizeCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ chart_size_labels | tojson }},
+            datasets: [{
+                data: {{ chart_size_counts | tojson }},
+                backgroundColor: [
+                    '#38bdf8', '#818cf8', '#c084fc', '#34d399', '#fbbf24', '#f87171'
+                ],
+                borderWidth: 2,
+                borderColor: '#0b1120'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, padding: 8 } } },
+            cutout: '60%'
+        }
+    });
+
+    // 5. Entity Types Chart
+    const typeCtx = document.getElementById('chartTypeDist').getContext('2d');
+    new Chart(typeCtx, {
+        type: 'polarArea',
+        data: {
+            labels: {{ chart_type_labels | tojson }},
+            datasets: [{
+                data: {{ chart_type_counts | tojson }},
+                backgroundColor: [
+                    'rgba(56, 189, 248, 0.7)',
+                    'rgba(16, 185, 129, 0.7)',
+                    'rgba(245, 158, 11, 0.7)',
+                    'rgba(139, 92, 246, 0.7)',
+                    'rgba(239, 68, 68, 0.7)'
+                ],
+                borderWidth: 1,
+                borderColor: '#0b1120'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, padding: 8 } } }
+        }
+    });
+
+    // 6. Age vs Rating Chart
+    const ageCtx = document.getElementById('chartAgeVsRating').getContext('2d');
+    new Chart(ageCtx, {
+        type: 'line',
+        data: {
+            labels: {{ chart_age_labels | tojson }},
+            datasets: [{
+                label: 'Avg Rating',
+                data: {{ chart_age_ratings | tojson }},
+                borderColor: '#38bdf8',
+                backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                tension: 0.35,
+                fill: true,
+                pointBackgroundColor: '#38bdf8'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { min: 3.6, max: 4.2, grid: { color: 'rgba(255, 255, 255, 0.05)' } },
+                x: { grid: { color: 'rgba(255, 255, 255, 0.05)' } }
+            },
+            plugins: { legend: { display: false } }
+        }
+    });
+
+    // City Comparison Logic
+    const c1Select = document.getElementById('compareCity1');
+    const c2Select = document.getElementById('compareCity2');
+
+    function updateComparison() {
+        const city1 = c1Select.value;
+        const city2 = c2Select.value;
+
+        fetch(`/api/city-data?city=${encodeURIComponent(city1)}`)
+            .then(r => r.json())
+            .then(d1 => {
+                document.getElementById('c1Name').innerText = city1;
+                document.getElementById('c1Rating').innerText = `★ ${d1.avg_rating}`;
+                document.getElementById('c1Count').innerText = Number(d1.total).toLocaleString();
+                document.getElementById('c1TopInd').innerText = d1.ind_labels[0] || 'General';
+                document.getElementById('c1TopComp').innerText = d1.top_names[0] || '—';
+            });
+
+        fetch(`/api/city-data?city=${encodeURIComponent(city2)}`)
+            .then(r => r.json())
+            .then(d2 => {
+                document.getElementById('c2Name').innerText = city2;
+                document.getElementById('c2Rating').innerText = `★ ${d2.avg_rating}`;
+                document.getElementById('c2Count').innerText = Number(d2.total).toLocaleString();
+                document.getElementById('c2TopInd').innerText = d2.ind_labels[0] || 'General';
+                document.getElementById('c2TopComp').innerText = d2.top_names[0] || '—';
+            });
+    }
+
+    c1Select.addEventListener('change', updateComparison);
+    c2Select.addEventListener('change', updateComparison);
+
+    // Dashboard Filter redirect
+    const dashInd = document.getElementById('dashFilterIndustry');
+    const dashLoc = document.getElementById('dashFilterLocation');
+    const dashReset = document.getElementById('dashBtnReset');
+
+    function applyDashFilters() {
+        const p = new URLSearchParams();
+        if (dashInd.value) p.set('industry', dashInd.value);
+        if (dashLoc.value) p.set('location', dashLoc.value);
+        window.location.href = `/dashboard?${p.toString()}`;
+    }
+
+    dashInd.addEventListener('change', applyDashFilters);
+    dashLoc.addEventListener('change', applyDashFilters);
+    dashReset.addEventListener('click', () => { window.location.href = '/dashboard'; });
+</script>
+{% endblock %}

@@ -1,44 +1,175 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
-    <title>{% block title %}AmbitionAnalytics Enterprise{% endblock %}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AmbitionBox Analysis - Company Intelligence India{% endblock %}</title>
+    <meta name="description" content="A fast, interactive lens on AmbitionBox company listings. Filter 64,210 companies by rating, industry, size, type, age and location in real time.">
+    
+    <!-- Bootstrap 5.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Custom Theme CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    {% block head %}{% endblock %}
 </head>
 <body>
-    <!-- Enterprise Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
-        <div class="container">
-            <a class="navbar-brand fw-bold" href="{{ url_for('index') }}">🏢 AmbitionAnalytics</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
+    <!-- Sticky Top Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-custom sticky-top">
+        <div class="container-fluid px-lg-4 px-3">
+            <a class="navbar-brand" href="{{ url_for('index') }}" id="navBrandLogo">
+                <span class="logo-icon"><i class="bi bi-bar-chart-fill"></i></span>
+                <span>AmbitionBox <span style="font-weight: 400; color: #94a3b8;">Analysis</span></span>
+            </a>
+            
+            <button class="navbar-toggler border-0 text-white" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain" aria-controls="navbarMain" aria-expanded="false" aria-label="Toggle navigation">
+                <i class="bi bi-list fs-3"></i>
             </button>
-            <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
-                <ul class="navbar-nav gap-2">
-                    <li class="nav-item"><a class="nav-link {% if request.endpoint == 'index' %}active{% endif %}" href="{{ url_for('index') }}">Overview</a></li>
-                    <li class="nav-item"><a class="nav-link {% if request.endpoint == 'explore' %}active{% endif %}" href="{{ url_for('explore') }}">City Explorer</a></li>
-                    <li class="nav-item"><a class="nav-link {% if request.endpoint == 'compare' %}active{% endif %}" href="{{ url_for('compare') }}">Compare Cities</a></li>
-                    <li class="nav-item"><a class="nav-link {% if request.endpoint == 'insights' %}active{% endif %}" href="{{ url_for('insights') }}">Data Insights</a></li>
+            
+            <div class="collapse navbar-collapse" id="navbarMain">
+                <ul class="navbar-nav mx-auto align-items-lg-center gap-1 my-2 my-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'index' %}active{% endif %}" href="{{ url_for('index') }}" id="navLinkHome">
+                            Home
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'explore' %}active{% endif %}" href="{{ url_for('explore') }}" id="navLinkExplore">
+                            Explore
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint in ['dashboard', 'insights'] %}active{% endif %}" href="{{ url_for('dashboard') }}" id="navLinkDashboard">
+                            Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'about' %}active{% endif %}" href="{{ url_for('about') }}" id="navLinkAbout">
+                            About
+                        </a>
+                    </li>
                 </ul>
+                
+                <div class="d-flex align-items-center gap-2">
+                    <button class="btn btn-sm text-secondary border-0 px-2" data-bs-toggle="modal" data-bs-target="#searchModal" title="Quick Search (Ctrl+K)">
+                        <i class="bi bi-search me-1"></i> Search
+                    </button>
+                    <a href="{{ url_for('explore') }}" class="btn-launch" id="btnLaunchTool">
+                        Launch tool
+                    </a>
+                </div>
             </div>
         </div>
     </nav>
 
-    <!-- Main View Content -->
-    <main class="container py-5">
+    <!-- Main Dynamic Content Container -->
+    <main>
         {% block content %}{% endblock %}
     </main>
 
-    <!-- Footer -->
-    <footer class="text-center py-5 text-muted border-top bg-white mt-5">
-        <div class="container">
-            <p class="mb-1 fw-bold text-dark">AmbitionBox City Analytics & Intelligence Suite</p>
-            <p class="small text-muted mb-0">Engineered with Python, Flask, Pandas, and Bootstrap 5.</p>
+    <!-- Global Search Modal -->
+    <div class="modal fade" id="searchModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content glass-panel" style="background: rgba(14, 23, 42, 0.95); border: 1px solid rgba(56, 189, 248, 0.3);">
+                <div class="modal-header border-0 pb-0">
+                    <h6 class="modal-title fw-bold text-white d-flex align-items-center gap-2">
+                        <i class="bi bi-search text-info"></i> Instant Company Lookup
+                    </h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-3">
+                    <input type="text" id="globalModalSearchInput" class="form-control-dark mb-3" placeholder="Search across 64,210 companies (e.g. TCS, Taletel, Amazon)..." autofocus>
+                    <div id="globalModalSearchResults" style="max-height: 320px; overflow-y: auto;">
+                        <p class="text-muted small text-center my-4">Type at least 2 characters to search across companies, industries, and locations.</p>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0 d-flex justify-content-between text-muted" style="font-size: 0.75rem;">
+                    <span>Press <kbd style="background: rgba(255,255,255,0.1); color: #fff;">Esc</kbd> to close</span>
+                    <a href="{{ url_for('explore') }}" class="text-info text-decoration-none">Open Advanced Filters &rarr;</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modern Dark Footer -->
+    <footer>
+        <div class="container text-center">
+            <div class="d-flex justify-content-center align-items-center gap-2 mb-2">
+                <span class="logo-icon" style="width:24px; height:24px; font-size:0.8rem;"><i class="bi bi-bar-chart-fill"></i></span>
+                <span class="fw-bold text-white">AmbitionBox Analysis</span>
+            </div>
+            <p class="text-secondary small mb-1">
+                India's Corporate Intelligence Lens &bull; 64,210 Companies &bull; 84 Industries &bull; 371 Locations
+            </p>
+            <p class="text-muted small mb-0">
+                End-to-End Data Science Project &bull; Built with Python, Flask, Pandas, and Interactive Glassmorphism UI
+            </p>
         </div>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Bootstrap 5 Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Global Hotkey & Search Script -->
+    <script>
+        // Ctrl+K / Cmd+K search shortcut
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                const modalEl = document.getElementById('searchModal');
+                const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                modal.show();
+            }
+        });
+
+        const gSearchInput = document.getElementById('globalModalSearchInput');
+        const gSearchResults = document.getElementById('globalModalSearchResults');
+        let gSearchTimer = null;
+
+        if (gSearchInput) {
+            gSearchInput.addEventListener('input', function() {
+                clearTimeout(gSearchTimer);
+                const q = this.value.trim();
+                if (q.length < 2) {
+                    gSearchResults.innerHTML = '<p class="text-muted small text-center my-4">Type at least 2 characters to search across all companies.</p>';
+                    return;
+                }
+                
+                gSearchResults.innerHTML = '<div class="text-center my-4"><div class="spinner-pulse"></div></div>';
+                
+                gSearchTimer = setTimeout(() => {
+                    fetch(`/api/search?q=${encodeURIComponent(q)}`)
+                        .then(r => r.json())
+                        .then(data => {
+                            if (!data || data.length === 0) {
+                                gSearchResults.innerHTML = '<p class="text-muted small text-center my-4">No matching companies found.</p>';
+                                return;
+                            }
+                            let html = '<div class="list-group list-group-flush gap-1">';
+                            data.forEach(item => {
+                                html += `
+                                    <a href="/explore?search=${encodeURIComponent(item.company_name)}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-2 px-3 rounded" style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); color: #fff;">
+                                        <div>
+                                            <div class="fw-semibold text-white">${item.company_name}</div>
+                                            <small class="text-muted">${item.industry !== '—' ? item.industry : 'General'} &bull; ${item.location || item.city}</small>
+                                        </div>
+                                        <span class="badge-rating-v2">★ ${item.company_rating}</span>
+                                    </a>
+                                `;
+                            });
+                            html += '</div>';
+                            gSearchResults.innerHTML = html;
+                        })
+                        .catch(err => {
+                            gSearchResults.innerHTML = '<p class="text-danger small text-center my-4">Search failed. Please try again.</p>';
+                        });
+                }, 250);
+            });
+        }
+    </script>
+    {% block scripts %}{% endblock %}
 </body>
 </html>
